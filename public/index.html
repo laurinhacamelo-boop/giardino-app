@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1a3a2a">
+<title>Giardino</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Source+Sans+3:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+
+<!-- ── LOGIN SCREEN ── -->
+<div id="loginScreen" class="screen active">
+  <div class="login-wrap">
+    <div class="login-logo">
+      <div class="login-leaf">🍃</div>
+      <div class="login-name">Giardino</div>
+      <div class="login-sub">Gestão de Cardápio</div>
+    </div>
+    <div class="login-card" id="loginCard">
+      <h2 class="login-ttl">Entrar</h2>
+      <div class="form-group">
+        <label>Usuário</label>
+        <input type="text" id="loginUser" placeholder="seu usuário" autocomplete="username" autocapitalize="none">
+      </div>
+      <div class="form-group">
+        <label>Senha</label>
+        <div style="position:relative">
+          <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password">
+          <button class="eye-btn" onclick="togglePass('loginPass',this)">👁</button>
+        </div>
+      </div>
+      <div class="login-err" id="loginErr"></div>
+      <button class="btn-primary full" onclick="doLogin()" id="loginBtn">Entrar</button>
+    </div>
+    <!-- Setup card (shown when no users exist) -->
+    <div class="login-card" id="setupCard" style="display:none">
+      <h2 class="login-ttl">Primeiro Acesso</h2>
+      <p style="font-size:12px;color:#888;margin-bottom:14px;">Configure o administrador do sistema</p>
+      <div class="form-group"><label>Nome</label><input type="text" id="setupNome" placeholder="Seu nome"></div>
+      <div class="form-group"><label>Usuário</label><input type="text" id="setupUser" placeholder="usuario" autocapitalize="none"></div>
+      <div class="form-group"><label>Senha</label>
+        <div style="position:relative">
+          <input type="password" id="setupPass" placeholder="mínimo 6 caracteres">
+          <button class="eye-btn" onclick="togglePass('setupPass',this)">👁</button>
+        </div>
+      </div>
+      <div class="login-err" id="setupErr"></div>
+      <button class="btn-primary full" onclick="doSetup()">Criar Administrador</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MAIN APP ── -->
+<div id="appScreen" class="screen">
+
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+    <span class="topbar-ttl" id="topbarTtl">Fichas Técnicas</span>
+    <button class="topbar-action" id="topbarAction" onclick="topbarActionFn()">＋</button>
+  </header>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">🍃 Giardino</div>
+      <div class="sidebar-user" id="sidebarUser"></div>
+    </div>
+    <div class="sidebar-nav">
+      <button class="snav active" data-tab="fichas" onclick="goTab('fichas')">
+        <span class="snav-icon">📋</span><span>Fichas Técnicas</span>
+        <span class="snav-badge" id="snav-fichas">0</span>
+      </button>
+      <button class="snav" data-tab="transformados" onclick="goTab('transformados')">
+        <span class="snav-icon">⚗️</span><span>Transformados</span>
+        <span class="snav-badge" id="snav-transformados">0</span>
+      </button>
+      <button class="snav" data-tab="insumos" onclick="goTab('insumos')">
+        <span class="snav-icon">🧂</span><span>Insumos</span>
+        <span class="snav-badge" id="snav-insumos">0</span>
+      </button>
+      <button class="snav" data-tab="dashboard" onclick="goTab('dashboard')">
+        <span class="snav-icon">📊</span><span>Dashboard</span>
+      </button>
+      <div class="snav-sep"></div>
+      <button class="snav" data-tab="users" onclick="goTab('users')" id="usersNavBtn" style="display:none">
+        <span class="snav-icon">👥</span><span>Usuários</span>
+      </button>
+    </div>
+    <div class="sidebar-footer">
+      <button class="snav" onclick="logout()"><span class="snav-icon">🚪</span><span>Sair</span></button>
+    </div>
+  </nav>
+
+  <!-- PAGES -->
+  <main class="main-content">
+
+    <!-- ── FICHAS PAGE ── -->
+    <div class="page active" id="page-fichas">
+      <div class="page-toolbar">
+        <input class="srch" id="srch-fichas" placeholder="🔍 Buscar prato..." oninput="renderFichas()">
+        <select class="sel" id="cat-fichas" onchange="renderFichas()">
+          <option value="">Todas</option>
+        </select>
+        <select class="sel" id="sort-fichas" onchange="renderFichas()">
+          <option value="nome">A–Z</option>
+          <option value="cmv_a">CMV ↑</option>
+          <option value="cmv_d">CMV ↓</option>
+          <option value="margem_d">Margem ↓</option>
+        </select>
+      </div>
+      <div class="page-cnt" id="cnt-fichas"></div>
+      <div class="cards-grid" id="fichas-grid"></div>
+    </div>
+
+    <!-- ── TRANSFORMADOS PAGE ── -->
+    <div class="page" id="page-transformados">
+      <div class="page-toolbar">
+        <input class="srch" id="srch-transf" placeholder="🔍 Buscar transformado..." oninput="renderTransf()">
+      </div>
+      <div class="page-cnt" id="cnt-transf"></div>
+      <div id="transf-list"></div>
+    </div>
+
+    <!-- ── INSUMOS PAGE ── -->
+    <div class="page" id="page-insumos">
+      <div class="page-toolbar">
+        <input class="srch" id="srch-ins" placeholder="🔍 Buscar insumo..." oninput="renderInsumos()">
+        <select class="sel" id="cat-ins" onchange="renderInsumos()">
+          <option value="">Todas</option>
+        </select>
+      </div>
+      <div class="page-cnt" id="cnt-ins"></div>
+      <div id="ins-list"></div>
+    </div>
+
+    <!-- ── DASHBOARD PAGE ── -->
+    <div class="page" id="page-dashboard">
+      <div id="dash-content"></div>
+    </div>
+
+    <!-- ── USERS PAGE ── -->
+    <div class="page" id="page-users">
+      <div class="page-toolbar">
+        <button class="btn-primary" onclick="openNewUser()">＋ Novo Usuário</button>
+      </div>
+      <div id="users-list"></div>
+    </div>
+
+  </main>
+
+  <!-- BOTTOM NAV (mobile) -->
+  <nav class="bottom-nav">
+    <button class="bnav active" data-tab="fichas" onclick="goTab('fichas')">
+      <span>📋</span><span>Fichas</span>
+    </button>
+    <button class="bnav" data-tab="transformados" onclick="goTab('transformados')">
+      <span>⚗️</span><span>Transf.</span>
+    </button>
+    <button class="bnav" data-tab="insumos" onclick="goTab('insumos')">
+      <span>🧂</span><span>Insumos</span>
+    </button>
+    <button class="bnav" data-tab="dashboard" onclick="goTab('dashboard')">
+      <span>📊</span><span>Dashboard</span>
+    </button>
+  </nav>
+</div>
+
+<!-- ══════════ MODALS ══════════ -->
+
+<!-- FICHA DETAIL/EDIT -->
+<div class="modal-overlay" id="ov-ficha">
+  <div class="modal modal-full">
+    <div class="modal-hdr" id="ficha-modal-hdr">
+      <button class="modal-back" onclick="closeModal('ov-ficha')">←</button>
+      <span class="modal-ttl" id="ficha-modal-ttl">Nova Ficha</span>
+      <button class="modal-save" onclick="saveFicha()" id="fichaModalSave">Salvar</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-section">
+        <div class="form-sec-ttl">📋 Identificação</div>
+        <div class="form-group"><label>Nome do Prato *</label><input id="ff-nome" placeholder="Ex: Risoto de Cogumelos"></div>
+        <div class="form-row">
+          <div class="form-group flex1">
+            <label>Categoria *</label>
+            <select id="ff-cat">
+              <option value="">Selecione...</option>
+              <option>ENTRADAS</option><option>PORÇÕES</option><option>PRINCIPAL</option>
+              <option>SOBREMESA</option><option>PIZZAS</option><option>CAFÉ</option>
+              <option>DRINKS</option><option>DOSES</option><option>SODAS E SUCOS</option>
+              <option>EXECUTIVO E PF</option><option>COMBOS</option>
+            </select>
+          </div>
+          <div class="form-group w80"><label>Porções</label><input id="ff-porcoes" type="number" min="1" value="1"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group flex1"><label>Rendimento</label><input id="ff-rend" type="number" step="0.01" placeholder="1"></div>
+          <div class="form-group w80"><label>Unidade</label><input id="ff-unid" placeholder="kg/un"></div>
+        </div>
+      </div>
+      <div class="form-section">
+        <div class="form-sec-ttl">💰 Preços de Venda</div>
+        <div class="form-row">
+          <div class="form-group flex1"><label>Preço Loja (R$)</label><input id="ff-preco" type="number" step="0.01" oninput="calcCustoFicha()"></div>
+          <div class="form-group flex1"><label>Preço iFood (R$)</label><input id="ff-preco-if" type="number" step="0.01"></div>
+        </div>
+      </div>
+      <div class="form-section">
+        <div class="form-sec-ttl" style="display:flex;justify-content:space-between;align-items:center;">
+          🧂 Ingredientes
+          <button class="btn-add-row" onclick="addIngRow()">＋</button>
+        </div>
+        <div id="ing-rows"></div>
+        <div class="custo-preview" id="custo-preview" style="display:none">
+          <div class="cp-item"><div class="cp-lbl">Custo</div><div class="cp-val" id="cp-custo">—</div></div>
+          <div class="cp-item"><div class="cp-lbl">Preço</div><div class="cp-val" id="cp-preco">—</div></div>
+          <div class="cp-item"><div class="cp-lbl">Margem</div><div class="cp-val green" id="cp-margem">—</div></div>
+          <div class="cp-item"><div class="cp-lbl">CMV</div><div class="cp-val" id="cp-cmv">—</div></div>
+        </div>
+      </div>
+      <div class="form-section">
+        <div class="form-sec-ttl" style="display:flex;justify-content:space-between;align-items:center;">
+          👨‍🍳 Modo de Preparo
+          <button class="btn-add-row" onclick="addPrepRow()">＋</button>
+        </div>
+        <div id="prep-rows"></div>
+      </div>
+      <div class="form-section">
+        <div class="form-sec-ttl">📝 Observações</div>
+        <textarea id="ff-obs" rows="3" placeholder="Dicas, variações, alérgenos..."></textarea>
+      </div>
+      <!-- Photo -->
+      <div class="form-section">
+        <div class="form-sec-ttl">📷 Foto do Prato</div>
+        <div class="photo-upload-area" id="photo-upload-area" onclick="document.getElementById('photo-file-input').click()">
+          <img id="photo-preview" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:8px;">
+          <div id="photo-placeholder">
+            <div style="font-size:32px">📷</div>
+            <div style="font-size:12px;color:#aaa;margin-top:6px">Toque para adicionar foto</div>
+          </div>
+        </div>
+        <input type="file" id="photo-file-input" accept="image/*" style="display:none" onchange="handlePhotoUpload(event)">
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FICHA VIEW (read-only, for kitchen) -->
+<div class="modal-overlay" id="ov-view">
+  <div class="modal modal-full">
+    <div class="modal-hdr" id="view-hdr">
+      <button class="modal-back" onclick="closeModal('ov-view')">←</button>
+      <span class="modal-ttl" id="view-ttl"></span>
+      <button class="modal-save" onclick="printCurrentFicha()">🖨</button>
+    </div>
+    <div class="modal-body" id="view-body" style="padding:0;"></div>
+  </div>
+</div>
+
+<!-- TRANSFORMADO FORM -->
+<div class="modal-overlay" id="ov-transf">
+  <div class="modal modal-full">
+    <div class="modal-hdr">
+      <button class="modal-back" onclick="closeModal('ov-transf')">←</button>
+      <span class="modal-ttl">Novo Transformado</span>
+      <button class="modal-save" onclick="saveTransf()">Salvar</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-section">
+        <div class="form-sec-ttl">⚗️ Identificação</div>
+        <div class="form-group"><label>Nome *</label><input id="tf-nome" placeholder="Ex: Molho ao Sugo"></div>
+        <div class="form-row">
+          <div class="form-group flex1"><label>Rendimento</label><input id="tf-rend" type="number" step="0.01" oninput="calcTransfCusto()"></div>
+          <div class="form-group w80"><label>Unidade</label><input id="tf-unid" placeholder="kg" value="kg"></div>
+        </div>
+        <div class="form-group"><label>Preparo / Obs</label><textarea id="tf-obs" rows="2"></textarea></div>
+      </div>
+      <div class="form-section">
+        <div class="form-sec-ttl" style="display:flex;justify-content:space-between;align-items:center;">
+          🧂 Insumos
+          <button class="btn-add-row" onclick="addTransfRow()">＋</button>
+        </div>
+        <div id="transf-ing-rows"></div>
+        <div class="custo-preview" id="transf-preview" style="display:none">
+          <div class="cp-item"><div class="cp-lbl">Custo Total</div><div class="cp-val" id="tcp-total">—</div></div>
+          <div class="cp-item"><div class="cp-lbl">Custo / Unidade</div><div class="cp-val" id="tcp-unit">—</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- INSUMO FORM -->
+<div class="modal-overlay" id="ov-ins">
+  <div class="modal">
+    <div class="modal-hdr">
+      <button class="modal-back" onclick="closeModal('ov-ins')">←</button>
+      <span class="modal-ttl" id="ins-modal-ttl">Novo Insumo</span>
+      <button class="modal-save" onclick="saveInsumo()">Salvar</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-section">
+        <div class="form-group"><label>Nome *</label><input id="if-nome" placeholder="Ex: Filé Mignon"></div>
+        <div class="form-row">
+          <div class="form-group flex1">
+            <label>Categoria</label>
+            <select id="if-cat">
+              <option value="">—</option>
+              <option>Sacolão</option><option>Supermercado</option><option>Laticínios</option>
+              <option>Proteína</option><option>BAR</option><option>Café</option>
+              <option>Cervejas</option><option>Descartáveis</option>
+            </select>
+          </div>
+          <div class="form-group w80">
+            <label>Unidade</label>
+            <select id="if-unid">
+              <option>KG</option><option>L</option><option>UN</option><option>MAÇO</option>
+              <option>CX</option><option>PCT</option><option>G</option><option>ML</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group flex1"><label>Preço Compra (R$) *</label><input id="if-preco" type="number" step="0.01" oninput="calcInsUnit()"></div>
+          <div class="form-group w80"><label>Quantidade</label><input id="if-qtd" type="number" step="0.01" value="1" oninput="calcInsUnit()"></div>
+        </div>
+        <div class="form-group"><label>Fator Rendimento</label><input id="if-rend" type="number" step="0.01" value="0.9" oninput="calcInsUnit()"></div>
+        <div class="custo-preview" id="ins-preview" style="display:none">
+          <div class="cp-item"><div class="cp-lbl">Custo/Unid Líquida</div><div class="cp-val" id="ip-unit">—</div></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group flex1"><label>Fornecedor 1</label><input id="if-forn1"></div>
+          <div class="form-group flex1"><label>Fornecedor 2</label><input id="if-forn2"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- USER FORM -->
+<div class="modal-overlay" id="ov-user">
+  <div class="modal">
+    <div class="modal-hdr">
+      <button class="modal-back" onclick="closeModal('ov-user')">←</button>
+      <span class="modal-ttl">Novo Usuário</span>
+      <button class="modal-save" onclick="saveUser()">Salvar</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-section">
+        <div class="form-group"><label>Nome</label><input id="uf-nome" placeholder="Nome completo"></div>
+        <div class="form-group"><label>Usuário *</label><input id="uf-user" placeholder="login" autocapitalize="none"></div>
+        <div class="form-group"><label>Senha *</label>
+          <div style="position:relative">
+            <input type="password" id="uf-pass" placeholder="mínimo 6 caracteres">
+            <button class="eye-btn" onclick="togglePass('uf-pass',this)">👁</button>
+          </div>
+        </div>
+        <div class="form-group"><label>Perfil</label>
+          <select id="uf-role">
+            <option value="viewer">Visualizador (só leitura)</option>
+            <option value="editor">Editor (pode criar/editar)</option>
+            <option value="admin">Administrador (acesso total)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast" class="toast"></div>
+
+<!-- PRINT AREA -->
+<div id="printArea" style="display:none"></div>
+
+<script src="/js/app.js"></script>
+</body>
+</html>
